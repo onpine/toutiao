@@ -10,16 +10,21 @@
           }}</el-breadcrumb-item>
         </el-breadcrumb>
       </div>
-      <el-form ref="form" :model="article" label-width="40px">
-        <el-form-item label="标题">
+      <el-form
+        :rules="formRules"
+        ref="publish-form"
+        :model="article"
+        label-width="60px"
+      >
+        <el-form-item label="标题" prop="title">
           <el-input v-model="article.title"></el-input>
         </el-form-item>
-        <el-form-item label="内容">
-          <!-- <el-input type="textarea" v-model="article.content"></el-input> -->
-          <el-tiptap
-            :extensions="extensions"
+        <el-form-item label="内容" prop="content">
+          <el-input
+            type="textarea"
+            :autosize="{ minRows: 4, maxRows: 12 }"
             v-model="article.content"
-          ></el-tiptap>
+          ></el-input>
         </el-form-item>
         <el-form-item label="封面">
           <el-radio-group v-model="article.cover.type">
@@ -29,7 +34,7 @@
             <el-radio :label="-1">自动</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="频道">
+        <el-form-item label="频道" prop="channel_id">
           <el-select v-model="article.channel_id" placeholder="请选择频道">
             <el-option
               v-for="(channel, index) in channels"
@@ -50,27 +55,9 @@
 
 <script>
 import { getArticleChannels, addArticle, getArticle, updataArticle } from '@/api/article'
-import 'element-tiptap/lib/index.css'
-import {
-  // 需要的 extensions
-  ElementTiptap,
-  Doc,
-  Text,
-  Paragraph,
-  Heading,
-  Bold,
-  Underline,
-  Italic,
-  Strike,
-  ListItem,
-  BulletList,
-  OrderedList
-} from 'element-tiptap'
-
 export default {
   name: 'PublishIndex',
   components: {
-    'el-tiptap': ElementTiptap
   },
   props: {},
   data () {
@@ -88,19 +75,18 @@ export default {
         channel_id: null
       },
       channels: [],
-      extensions: [
-        new Doc(),
-        new Text(),
-        new Paragraph(),
-        new Heading({ level: 5 }),
-        new Bold({ bubble: true }), // 在气泡菜单中渲染菜单按钮
-        new Underline({ bubble: true, menubar: false }), // 在气泡菜单而不在菜单栏中渲染菜单按钮
-        new Italic(),
-        new Strike(),
-        new ListItem(),
-        new BulletList(),
-        new OrderedList()
-      ]
+      formRules: {
+        title: [
+          { required: true, message: '请输入文章标题', trigger: 'blur' },
+          { min: 5, max: 30, message: '长度5 到 30 个字符', trigger: 'blur' }
+        ],
+        content: [
+          { required: true, message: '请输入文章内容', trigger: 'change' }
+        ],
+        channel_id: [
+          { required: true, message: '请输入文章频道' }
+        ]
+      }
     }
   },
   computed: {},
@@ -118,29 +104,36 @@ export default {
   mounted () {},
   methods: {
     onPublish (draft = false) {
-      const articleId = this.$route.query.id
-      if (articleId) {
+      // 数据验证
+      this.$refs['publish-form'].validate(valid => {
+        // 验证失败，停止表单验证
+        if (!valid) {
+          return false
+        }
+        const articleId = this.$route.query.id
+        if (articleId) {
         // 执行修改操作
-        updataArticle(articleId, this.article, draft).then(res => {
+          updataArticle(articleId, this.article, draft).then(res => {
           // console.log(res)
-          this.$message({
-            type: 'success',
-            message: `${draft ? '存入草稿' : '发布'}成功`
+            this.$message({
+              type: 'success',
+              message: `${draft ? '存入草稿' : '发布'}成功`
+            })
+            // 跳转到内容管理页面
+            this.$router.push('/article')
           })
-          // 跳转到内容管理页面
-          this.$router.push('/article')
-        })
-      } else {
-        addArticle(this.article, draft).then(res => {
+        } else {
+          addArticle(this.article, draft).then(res => {
           // console.log(res)
-          this.$message({
-            type: 'success',
-            message: `${draft ? '存入草稿' : '发布'}成功`
+            this.$message({
+              type: 'success',
+              message: `${draft ? '存入草稿' : '发布'}成功`
+            })
+            // 跳转到内容管理页面
+            this.$router.push('/article')
           })
-          // 跳转到内容管理页面
-          this.$router.push('/article')
-        })
-      }
+        }
+      })
     },
 
     loadChannels () {
