@@ -10,6 +10,7 @@
   "dependencies": {
     "axios": "^0.21.0",
     "core-js": "^3.6.5",
+    "cropperjs": "^1.5.9",
     "element-ui": "^2.14.1",
     "json-bigint": "^1.0.0",
     "vue": "^2.6.11",
