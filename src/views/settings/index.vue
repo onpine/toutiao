@@ -10,16 +10,21 @@
       </div>
       <el-row>
         <el-col :span="16">
-          <el-form ref="user" :model="user" label-width="80px">
+          <el-form
+            ref="setting-user"
+            :rules="rules"
+            :model="user"
+            label-width="80px"
+          >
             <el-form-item label="编号">{{ user.id }}</el-form-item>
             <el-form-item label="手机">{{ user.mobile }}</el-form-item>
-            <el-form-item label="媒体名称">
+            <el-form-item label="媒体名称" prop="name">
               <el-input v-model="user.name"></el-input>
             </el-form-item>
-            <el-form-item label="媒体介绍">
+            <el-form-item label="媒体介绍" prop="intro">
               <el-input type="textarea" v-model="user.intro"></el-input>
             </el-form-item>
-            <el-form-item label="邮箱">
+            <el-form-item label="邮箱" prop="email">
               <el-input v-model="user.email"></el-input>
             </el-form-item>
             <el-form-item>
@@ -106,7 +111,21 @@ export default {
       // 裁切器实例
       cropper: null,
       updatePhotoLoading: false,
-      updateProfileLoading: false
+      updateProfileLoading: false,
+      rules: {
+        name: [
+          { required: true, message: '请输入媒体名称', trigger: 'blur' },
+          { min: 1, max: 7, message: '长度2 到 10 个字符', trigger: 'blur' }
+        ],
+        intro: [
+          { required: true, message: '请输入媒体名称', trigger: 'blur' },
+          { min: 5, max: 30, message: '长度2 到 10 个字符', trigger: 'blur' }
+        ],
+        email: [
+          { required: true, message: '请输入邮箱地址', trigger: 'blur' },
+          { type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] }
+        ]
+      }
     }
   },
   computed: {},
@@ -117,21 +136,26 @@ export default {
   mounted () {},
   methods: {
     onUpdateUser () {
-      this.updateProfileLoading = true
-      const { name, intro, eamil } = this.user
-      updateUserProfile({
-        name,
-        intro,
-        eamil
-      }).then(res => {
-        this.$message({
-          type: 'success',
-          message: '保存信息成功'
+      this.$refs['setting-user'].validate(valid => {
+        if (!valid) {
+          return false
+        }
+        this.updateProfileLoading = true
+        const { name, intro, eamil } = this.user
+        updateUserProfile({
+          name,
+          intro,
+          eamil
+        }).then(res => {
+          this.$message({
+            type: 'success',
+            message: '保存信息成功'
+          })
+          this.updateProfileLoading = false
+          // 发布通知用户信息已修改
+          // 更新顶部用户信息
+          globalBus.$emit('update-user', this.user)
         })
-        this.updateProfileLoading = false
-        // 发布通知用户信息已修改
-        // 更新顶部用户信息
-        globalBus.$emit('update-user', this.user)
       })
     },
 

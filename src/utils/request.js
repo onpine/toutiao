@@ -3,6 +3,8 @@
  */
 import axios from 'axios'
 import JSONbig from 'json-bigint'
+import router from '@/router'
+import Message from 'element-ui'
 
 // 创建一个axios实例，说白了就是复制了一个axios
 // 我们通过这个实例去发送请求，把需要的配置给这个实例来处理
@@ -51,6 +53,31 @@ request.interceptors.request.use(
 )
 
 // 响应拦截器
+request.interceptors.response.use(function (response) {
+  // 所有响应码为 2xx 的都会进入这里
+  return response
+}, function (error) {
+  const status = error.response.status
+
+  // 任何超出 2xx 的响应码都会进入这里
+  if (error.response && status === 401) {
+    // 清除本地存储中的用户登陆状态
+    // 跳转到登陆页面
+    window.localStorage.removeItem('user')
+    router.push('/login')
+    Message.error('登录状态无效')
+  } else if (status === 403) {
+    Message({
+      type: 'warning',
+      message: '没有操作权限'
+    })
+  } else if (status === 400) {
+    Message.error('请求参数错误，请检查参数')
+  } else if (status >= 500) {
+    Message.error('服务端内部异常，请稍后重试')
+  }
+  return Promise.reject(error)
+})
 
 // 导出请求方法
 export default request
